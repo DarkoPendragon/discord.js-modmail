@@ -1,9 +1,9 @@
 # discord.js-modmail
 ***
-A very simple mod mail system for users to contact mods via a bots dm (similar to Reddit) that doesn't require a database. Do note this was written while I was half asleep, and some features mentioned are a WIP and don't work. And although this works without a database I'm planning on adding support for sqlite (local) and MongoDB (online). The `depth` option has no effect yet. Messages sent may contain images or files (replies only accept images). 
+A very simple mod mail system for users to contact mods via a bots dm (similar to Reddit) that doesn't require a database. Do note this was written while I was half asleep, and some features mentioned are a WIP and don't work. And although this works without a database I'm planning on adding support for sqlite (local) and MongoDB (online). The `depth` option has no effect yet. Messages sent may contain images or files (replies only accept images).
 
 Here's some images of the logging using method 0:  
-![Normal Image](https://media.discordapp.net/attachments/717445703449837568/784088412651126815/Screenshot_9.png "Title") 
+![Normal Image](https://media.discordapp.net/attachments/717445703449837568/784088412651126815/Screenshot_9.png "Title")
 ![Normal Image](https://media.discordapp.net/attachments/717445703449837568/784088495399501854/Screenshot_10.png "Title")   
 The CausticPenguin "bot" is an actual person, the script uses webhooks to send messages to use their avatars and names. Method 1 with only send their name and their message. Method 0 also can have up to 10 images per message, while 1 will only give you links to the files. For either only messages using the reply command will send to users. Talking in the channel will not send messages. Why would you want to use method 1 over 0? Depending on activity method 1 might be faster than 0 and less rate limited. But unless you're an extremely active server you won't have that problem. Or, shouldn't. Probably.  
 
@@ -16,6 +16,7 @@ There's a few options you can pass to customize this a bit.
 | method | Number | 0 = webhook system (faster, less limited), 1 = normal messages (slower, much less fancy) | 0 |
 | depth | Number | 0 = no database, 1 = sqlite, 2 = MongoDB | 0 |
 | cooldown | Boolean | Limits messages (sent, not replies) to a 5 second cooldown. | false |
+| webhookEmbeds | Boolean | Uses embeds to send a message instead of just text | false |
 | logStaff | Boolean | Logs staff talking in the mod mail channels | false |
 | limitedMsg | Boolean | Makes it so users can only send a message to open a channel, and no more | false |
 | reasonAlert | Boolean | Adds who closed a channel to the !close command | false |

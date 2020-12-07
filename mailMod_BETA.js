@@ -1,23 +1,17 @@
-// Penguins Mod Mail
-// channel per person (on dm) [done]
-// command to reply (!reply) [done]
-// ignores none commands (persons channel) [done]
-// logs chat in channel (logs seperate) [done]
-// deletes channel, alerts person the subject is closed (!close) [done]
-
 const Discord = require('discord.js')
 const path = require('path')
 module.exports = (client, options) => {
   const MODMAIL_SERVER = {
-    id: (options && options.id) || "", // whatever the main servers id is
-    categoryID: (options && options.categoryID) || "", // category
+    id: (options && options.id) || "",
+    categoryID: (options && options.categoryID) || "",
     loggingID: (options && options.loggingID) || "",
-    method: (options && options.method) || 0, // 0 = webhook system (faster, but limited to 30 messages per minutes per channel), 1 = normal messages (slower, much less limited and less fancy), defaults to 0 if it doesnt equal either
-    depth: (options && options.depth) || 0, // 0 = normal (no database), 1 = local sqlite database, 2 = online MongoDB (currently useless)
-    cooldown: Boolean((options && options.cooldown)), // false = no cooldown, true = messages are limited to one per 5 seconds (useful method 0 if there is a lot of activity)
-    limitedMsg: Boolean((options && options.limitedMsg)), // false = no limit, true = users will only be able to send their initial message to create the channel and nothing more, your "client" will need a Set called "MM_LIMITED" ( client.MM_LIMITED = new Set() )
+    method: (options && options.method) || 0,
+    depth: (options && options.depth) || 0,
+    cooldown: Boolean((options && options.cooldown)),
+    limitedMsg: Boolean((options && options.limitedMsg)),
     reasonAlert: Boolean((options && options.reasonAlert)),
     logStaff: Boolean((options && options.logStaff)),
+    webhookEmbeds: Boolean((options && options.webhookEmbeds)),
     prefix: (options && options.prefix) || "!",
     help: (options && options.help) || "help",
     reply: (options && options.reply) || "reply",
@@ -40,8 +34,6 @@ module.exports = (client, options) => {
   function logMessage(message, options = {response: 0, user: null, id: null, cnt: null, atch: [], to: null, reason: null, staff: null}) {
     return new Promise((res, rej) => {
       if (options.user == null) rej(new Error("user was not passed for logMessage"))
-      // if (options.id == null) rej(new Error("id was not passed for logMessage"))
-      // if (options.cnt == null) rej(new Error("cnt was not passed for logMessage"))
       const embed = new Discord.MessageEmbed()
       if (options.response == 0 || options.response == "normal") embed.setTitle(`Response Recived: ${options.user.username}`).setColor("GOLD").addField("User ID", options.user.id, true).addField("Channel ID", options.id, true).setThumbnail(options.user.displayAvatarURL()).setDescription(`${options.cnt ? options.cnt : `[No message content]`}`+`${options.atch && options.atch.length>0 ? options.atch.map(index => { return `\n[Attachment URL](${index.url}) [${index.name.split(".")[1].toUpperCase()}]` }).join("") : ""}`)
       else if (options.response == 1 || options.response == "staff" && MODMAIL_SERVER.logStaff) embed.setTitle(`Staff Talk: ${options.user.username}`).setColor("AQUA").addField("User ID", options.user.id, true).addField("Channel ID", options.id, true).setThumbnail(options.user.displayAvatarURL()).setDescription(options.cnt)
@@ -80,10 +72,6 @@ module.exports = (client, options) => {
             }
           }
           else channel = channel.type ? await channel.fetch(true) : await channel.first().fetch(true)
-          // if (!channel.parent) {
-          //   if (channel && channel.type) channel = await channel.fetch(true)
-          //   await channel.setParent(MODMAIL_SERVER.categoryID, {reason: "ModMail System"}).catch(e => console.error(`SET_PARENT for ${message.author.id} ` + e.stack ? e.stack : e))
-          // }
           var webhook = await channel.fetchWebhooks()
           if (!webhook || webhook.size == 0) webhook = await channel.createWebhook(`${info.id}`, {avatar: info.avatarURL, reason: `ModMail Hook for: ${info.id}`}).catch(e => {
             console.error(`CHOOK_${message.author.id} ` + e.stack ? e.stack : e)
@@ -95,7 +83,9 @@ module.exports = (client, options) => {
               if (verifyFile(m.name)) info.attachments.push({image: {url: m.url}, color: 10040319, description: `[Attachment URL](${m.url}) [${m.name.split(".")[1].toUpperCase()}]`})
               else info.attachments.push({image: {url: m.url}, color: 10040319, description: `[Attachment URL](${m.url}) [${m.name.split(".")[1].toUpperCase()}]: WARNING: File might be harmful`})
             })
-            webhook.send(info.cnt.length > 0 ? info.cnt : "*[No message content, but images were attached]*", {
+
+            if (MODMAIL_SERVER.webhookEmbeds) info.attachments.unshift({thumbnail: message.author.displayAvatarURL({format:"png"}), description:info.cnt, color:16766720, title:message.author.username})
+            webhook.send(MODMAIL_SERVER.webhookEmbeds ? "" : (info.cnt.length > 0 ? info.cnt : "*[No message content, but images were attached]*"), {
               username: message.author.username,
               avatarURL: info.avatarURL,
               embeds: info.attachments
@@ -109,7 +99,8 @@ module.exports = (client, options) => {
               return message.reply(`There was an error with the ModMail system, please contact staff to get it resolved.\nError: SHOOK_${message.author.id}`)
             })
           } else {
-            webhook.send(info.cnt.length > 0 ? info.cnt : "*[No message content]*", {
+            if (MODMAIL_SERVER.webhookEmbeds) info.attachments.unshift({thumbnail: message.author.displayAvatarURL({format:"png"}), description:info.cnt, color:16766720, title:message.author.username})
+            webhook.send(MODMAIL_SERVER.webhookEmbeds ? "" : (info.cnt.length > 0 ? info.cnt : "*[No message content]*", {
               username: message.author.username,
               avatarURL: info.avatarURL
             }).then(() => {
@@ -138,10 +129,6 @@ module.exports = (client, options) => {
             }
           }
           else channel = channel.type ? await channel.fetch(true) : await channel.first().fetch(true)
-          // if (!channel.parent) {
-          //   if (channel && channel.type) channel = await channel.fetch(true)
-          //   await channel.setParent(MODMAIL_SERVER.categoryID, {reason: "ModMail System"}).catch(e => console.error(`SET_PARENT for ${message.author.id} ` + e.stack ? e.stack : e))
-          // }
           if (message.attachments.size > 0) {
             const embed = new Discord.MessageEmbed()
             var links = []
@@ -188,10 +175,6 @@ module.exports = (client, options) => {
             }
           }
           else channel = channel.type ? await channel.fetch(true) : await channel.first().fetch(true)
-          // if (!channel.parent) {
-          //   if (channel && channel.type) channel = await channel.fetch(true)
-          //   await channel.setParent(MODMAIL_SERVER.categoryID, {reason: "ModMail System"}).catch(e => console.error(`SET_PARENT for ${message.author.id} ` + e.stack ? e.stack : e))
-          // }
           var webhook = await channel.fetchWebhooks()
           if (!webhook || webhook.size == 0) webhook = await channel.createWebhook(`${info.id}`, {avatar: info.avatarURL, reason: `ModMail Hook for: ${info.id}`}).catch(e => {
             console.error(`CHOOK_${message.author.id} ` + e.stack ? e.stack : e)
