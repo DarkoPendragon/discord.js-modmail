@@ -84,8 +84,8 @@ module.exports = (client, options) => {
               else info.attachments.push({image: {url: m.url}, color: 10040319, description: `[Attachment URL](${m.url}) [${m.name.split(".")[1].toUpperCase()}]: WARNING: File might be harmful`})
             })
 
-            if (MODMAIL_SERVER.webhookEmbeds) info.attachments.unshift({thumbnail: message.author.displayAvatarURL({format:"png"}), description:info.cnt, color:16766720, title:message.author.username})
-            webhook.send(MODMAIL_SERVER.webhookEmbeds ? "" : (info.cnt.length > 0 ? info.cnt : "*[No message content, but images were attached]*"), {
+            if (MODMAIL_SERVER.webhookEmbeds) info.attachments.unshift({thumbnail: {url: message.author.displayAvatarURL({format:"png"})}, description:info.cnt, color:16766720, title:message.author.username})
+            webhook.send(MODMAIL_SERVER.webhookEmbeds ? " " : (info.cnt.length > 0 ? info.cnt : "*[No message content, but images were attached]*"), {
               username: message.author.username,
               avatarURL: info.avatarURL,
               embeds: info.attachments
@@ -99,10 +99,11 @@ module.exports = (client, options) => {
               return message.reply(`There was an error with the ModMail system, please contact staff to get it resolved.\nError: SHOOK_${message.author.id}`)
             })
           } else {
-            if (MODMAIL_SERVER.webhookEmbeds) info.attachments.unshift({thumbnail: message.author.displayAvatarURL({format:"png"}), description:info.cnt, color:16766720, title:message.author.username})
-            webhook.send(MODMAIL_SERVER.webhookEmbeds ? "" : (info.cnt.length > 0 ? info.cnt : "*[No message content]*", {
+            if (MODMAIL_SERVER.webhookEmbeds) info.attachments.unshift({thumbnail: {url: message.author.displayAvatarURL({format:"png"})}, description:info.cnt, color:16766720, title:message.author.username})
+            webhook.send(MODMAIL_SERVER.webhookEmbeds ? "" : (info.cnt.length > 0 ? info.cnt : "*[No message content]*"), {
               username: message.author.username,
-              avatarURL: info.avatarURL
+              avatarURL: info.avatarURL,
+              embeds: MODMAIL_SERVER.webhookEmbeds ? info.attachments : []
             }).then(() => {
               message.react("✅")
               logMessage(message, {response: 0, user: client.users.cache.get(channel.topic), id: channel.id, cnt: info.cnt ? info.cnt : ""})
@@ -289,6 +290,8 @@ module.exports = (client, options) => {
         case MODMAIL_SERVER.close: {
           if (elevation(message) > 1) {
             const num = Math.floor(1000 + Math.random() * 9000)
+            const user = await message.client.users.fetch(message.channel.topic.trim())
+            console.log(user);
             const msg = await message.channel.send(`\`\`\`\nTo confirm the closure of this channel send this four digit code\n\n${num}\n\nThis will cancel in 60 seconds.\n\`\`\``)
             const collector = message.channel.createMessageCollector(m => m.content.trim() == `${num}` && m.author.id == message.author.id, { time: 60000, max: 1 })
             collector.on('collect', () => {
@@ -300,8 +303,8 @@ module.exports = (client, options) => {
                 if (args[0]) embed.addField("Reason", args.join(" "))
                 if (message.attachments.size > 0 && isImage(message.attachments.first().name)) embed.setImage(message.attachments.first().url)
                 if (MODMAIL_SERVER.reasonAlert) embed.addField("Closed By", message.author.tag)
-                message.client.users.cache.get(message.channel.topic.trim()).send(`Hello there,\nThe staff of ${message.guild.name} have marked your case as closed. You may still open a new one in the future.${args[0] ? `\nStaff reason: ${args.join(" ")}` : ""}`).catch(console.log)
-                logMessage(message, {response: 3, staff: message.author, user: client.users.cache.get(message.channel.topic.trim()), reason: args[0] ? args.join(" ") : false})
+                user.send(`Hello there,\nThe staff of ${message.guild.name} have marked your case as closed. You may still open a new one in the future.${args[0] ? `\nStaff reason: ${args.join(" ")}` : ""}`).catch(console.log)
+                logMessage(message, {response: 3, staff: message.author, user: user, reason: args[0] ? args.join(" ") : false})
                 message.channel.delete(`MM: ${id} closed by ${message.author.tag}`).catch(console.log)
               }, 15000)
             })
